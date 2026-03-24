@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Ads Copy Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Google Ads Copy Generator</h1>
+      <p class="intro">
+        Enter keywords and generate compliant ad headlines (max 30 chars) and descriptions
+        (max 90 chars).
+      </p>
+
+      <form id="ad-form">
+        <label for="keywords">Keywords (comma-separated)</label>
+        <input id="keywords" name="keywords" placeholder="plumber, emergency plumbing, drain cleaning" required />
+
+        <div class="row">
+          <div>
+            <label for="headline_count">Headlines</label>
+            <input id="headline_count" name="headline_count" type="number" min="3" max="15" value="10" />
+          </div>
+          <div>
+            <label for="description_count">Descriptions</label>
+            <input id="description_count" name="description_count" type="number" min="2" max="8" value="4" />
+          </div>
+        </div>
+
+        <button type="submit">Generate Ads</button>
+      </form>
+
+      <p id="error" class="error"></p>
+
+      <section id="results" class="results hidden">
+        <h2>Headlines</h2>
+        <ol id="headlines"></ol>
+
+        <h2>Descriptions</h2>
+        <ol id="descriptions"></ol>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById('ad-form');
+      const errorEl = document.getElementById('error');
+      const resultsEl = document.getElementById('results');
+      const headlinesEl = document.getElementById('headlines');
+      const descriptionsEl = document.getElementById('descriptions');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        errorEl.textContent = '';
+        resultsEl.classList.add('hidden');
+
+        const payload = {
+          keywords: form.keywords.value,
+          headline_count: Number(form.headline_count.value),
+          description_count: Number(form.description_count.value),
+        };
+
+        const response = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          errorEl.textContent = data.error || 'Something went wrong.';
+          return;
+        }
+
+        headlinesEl.innerHTML = data.headlines
+          .map((item) => `<li>${item} <span>(${item.length}/30)</span></li>`)
+          .join('');
+
+        descriptionsEl.innerHTML = data.descriptions
+          .map((item) => `<li>${item} <span>(${item.length}/90)</span></li>`)
+          .join('');
+
+        resultsEl.classList.remove('hidden');
+      });
+    </script>
+  </body>
+</html>
